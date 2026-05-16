@@ -1,0 +1,33 @@
+[project]
+description = "This repository provides the source code for the ICLR'22 paper **Pre-training Molecular Graph Representation with 3D Geometry**, with the following task"
+name = "graphmvp"
+version = "0.1.0"
+readme = "README.md"
+requires-python = "==3.11.*"
+dependencies = [
+  "rdkit<=2023.03.3",
+  "ase",
+  "ogb",
+  "numpy<2",
+  "torch==2.1.0",
+  "torch-cluster",
+  "torch-scatter",
+  "torch-sparse",
+  "torch-geometric==1.7.2",
+  "descriptastorus",
+]
+[dependency-groups]
+dev = ["ipykernel", "ipython"]
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+descriptastorus = { git = "https://github.com/bp-kelley/descriptastorus" }
+[tool.uv]
+find-links = ["https://data.pyg.org/whl/torch-2.1.0+cu121.html"]
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+[tool.uv.extra-build-dependencies]
+torch-cluster = ["torch"]
+torch-scatter = ["torch"]
+torch-sparse = ["torch"]
