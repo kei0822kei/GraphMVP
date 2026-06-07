@@ -2,7 +2,7 @@
 
 ## Custom Dataset Preparation
 
-See [Sample](./custom/dataset/sample/raw/build_sample_dataset.ipynb)
+See [Sample](./dataset/sample/raw/build_sample_dataset.ipynb)
 
 ## Convert to Pytorch Geometric Dataset
 
