@@ -103,7 +103,10 @@ class CustomDataset(InMemoryDataset):
                 if conf_count < self.n_conf or conf_count > self.n_upper:
                     continue
 
-                for i in range(min(conf_count, self.n_conf)):
+                sorted_indices = np.argsort(energies_all)
+                selected_indices = sorted_indices[: self.n_conf]
+
+                for i in selected_indices:
                     data = mol_to_graph_data_obj_simple_3d(mol, positions_all[i])
                     data.mol_id = mol_id
                     data.energy = float(energies_all[i])
