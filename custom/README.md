@@ -44,28 +44,28 @@ def save_to_h5(molecule_data_list, output_filename="dataset.h5"):
             # Generate Canonical SMILES
             canonical_smiles = get_canonical_smiles(data["smiles"])
             if canonical_smiles is None: continue
-            
+
             numbers = data["numbers"]
             positions = data["positions"]
 
             # 1. Create RDKit molecule from Canonical SMILES
             mol = Chem.MolFromSmiles(canonical_smiles)
             mol = Chem.AddHs(mol)
-            
+
             # 2. Attach conformers
             for pos in positions:
                 conf = Chem.Conformer(mol.GetNumAtoms())
                 for i in range(mol.GetNumAtoms()):
                     conf.SetAtomPosition(i, pos[i])
                 mol.AddConformer(conf, assignId=True)
-            
+
             # 3. Serialize the RDKit Mol object
             mol_bytes = pickle.dumps(mol)
 
             # 4. Save to HDF5 using hash of Canonical SMILES
             id_ = hash_smiles(canonical_smiles)
             if id_ in f: continue
-            
+
             grp = f.create_group(id_)
             grp.attrs["smiles"] = canonical_smiles
             grp.create_dataset("mol_bytes", data=np.void(mol_bytes))
@@ -85,6 +85,50 @@ def save_to_h5(molecule_data_list, output_filename="dataset.h5"):
 * **Canonicalization:** Always use canonical SMILES for both the `smiles` attribute and the hash `id`. This ensures that identical chemical structures map to the same entry regardless of the input format.
 * **Serialization:** Ensure that the RDKit version used to save the data matches the version used during model training to avoid potential issues with binary pickle compatibility.
 * **Uniqueness:** Using the hash of the canonical SMILES as the group name effectively deduplicates your dataset, preventing the same molecule from being processed multiple times.
+
+### Sample Dataset
+
+* 23 compounds are extracted from CycpeptMPDB and conformations are build for debugging. The details are as follows:
+
+```python
+import h5py
+def load_dataset(filename):
+    data = []
+    with h5py.File(filename) as f:
+        for mol_id in f.keys():
+            grp = f[mol_id]
+            data.append({
+                "id": mol_id,
+                "smiles": grp.attrs["smiles"],
+                "numbers": grp["numbers"][:],
+                "positions": grp["positions"][:]
+            })
+    return data
+data = load_dataset("./dataset/sample/sample.h5")
+record = data[0]
+
+print(len(data))
+print(record.keys(), "\n")
+print(f"id: {record['id']}")
+print(f"smiles: {record['smiles']}")
+print(f"atomic numbers: {record['numbers']} ({type(record['numbers'])})")
+print(f"positions: shape -> {record['positions'].shape} ({type(record['positions'])})")
+```
+
+The first data is composed of 23 atoms and 5 conformations, and the information about elements and their positions
+are in numpy style `atomic numbers` and `positions` as follows:
+
+```text
+23
+dict_keys(['id', 'smiles', 'numbers', 'positions']) 
+
+id: 09265cefa918eeb34cbe15ee33683ccc5920ff20a49c3f587b25b4337a764044
+smiles: CC[C@@H](C)[C@@H]1NC(=O)[C@@H]2CCCN2C(=O)[C@H](C(C)C)NC(=O)[C@@H]2CCCN2C(=O)[C@H](Cc2ccccc2)N(C)C(=O)[C@H](C)NC(=O)c2csc1n2
+atomic numbers: [ 6  6  6  6  6  7  6  8  6  6  6  6  7  6  8  6  6  6  6  7  6  8  6  6
+  6  6  7  6  8  6  6  6  6  6  6  6  6  7  6  6  8  6  6  7  6  8  6  6
+ 16  6  7] (<class 'numpy.ndarray'>)
+positions: shape -> (5, 51, 3) (<class 'numpy.ndarray'>)
+```
 
 ## Convert to Pytorch Geometric Dataset
 
